@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PMSE Licence &rarr; Wireless Workbench</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 780px;
+    margin: 3rem auto;
+    padding: 0 1.25rem;
+    line-height: 1.5;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+  p.sub { color: #666; margin-top: 0; }
+  .dropzone {
+    border: 2px dashed #999;
+    border-radius: 10px;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .dropzone.drag { border-color: #2b6cb0; background: rgba(43,108,176,0.06); }
+  .dropzone input { display: none; }
+  button.primary {
+    background: #2b6cb0;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  button.primary:disabled { opacity: 0.5; cursor: default; }
+  .status { margin-top: 1rem; font-size: 0.9rem; }
+  .error { color: #c0392b; }
+  .warning { color: #b7791f; background: #fffaf0; border: 1px solid #f6ad55; padding: 0.6rem 0.8rem; border-radius: 6px; margin-top: 1rem; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1rem; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid #ddd; }
+  .meta { margin-top: 1.5rem; font-size: 0.9rem; }
+  .meta dt { font-weight: 600; float: left; width: 11rem; clear: left; }
+  .meta dd { margin: 0 0 0.25rem 11rem; }
+  .downloads { margin-top: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .downloads a {
+    display: inline-block;
+    border: 1px solid #2b6cb0;
+    color: #2b6cb0;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .hidden { display: none; }
+  .note { font-size: 0.82rem; color: #666; margin-top: 0.4rem; }
+</style>
+</head>
+<body>
+  <h1>PMSE Licence &rarr; Wireless Workbench</h1>
+  <p class="sub">Upload an Ofcom PMSE licence schedule PDF to generate files for importing frequencies into Shure Wireless Workbench.</p>
+
+  <div class="dropzone" id="dropzone">
+    <p id="dropzone-label">Drop a PDF here, or click to choose a file</p>
+    <input type="file" id="file-input" accept="application/pdf" />
+  </div>
+
+  <div class="status" id="status"></div>
+  <div id="results" class="hidden">
+    <dl class="meta" id="meta"></dl>
+
+    <div class="downloads">
+      <a href="#" id="dl-freq" download="wwb-frequency-list.txt">Download WWB frequency list (.txt)</a>
+      <a href="#" id="dl-csv" download="frequency-reference.csv">Download reference sheet (.csv)</a>
+    </div>
+    <p class="note">
+      The frequency list is the file to import directly into Wireless Workbench (Import &gt; frequencies from file).
+      The reference sheet maps each frequency to a suggested name and its coordination group &mdash;
+      Ofcom licences don't include per-mic names, so use it to manually label channels in WWB.
+    </p>
+
+    <table id="preview-table"></table>
+  </div>
+
+  <script>
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("file-input");
+    const statusEl = document.getElementById("status");
+    const resultsEl = document.getElementById("results");
+    const metaEl = document.getElementById("meta");
+    const tableEl = document.getElementById("preview-table");
+    const dlFreq = document.getElementById("dl-freq");
+    const dlCsv = document.getElementById("dl-csv");
+
+    dropzone.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("drag"); });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("drag");
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length) handleFile(fileInput.files[0]);
+    });
+
+    async function handleFile(file) {
+      resultsEl.classList.add("hidden");
+      statusEl.innerHTML = `Parsing ${file.name}&hellip;`;
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const resp = await fetch("/api/convert", { method: "POST", body: formData });
+        const data = await resp.json();
+        if (!resp.ok) {
+          statusEl.innerHTML = `<span class="error">${data.detail || "Something went wrong."}</span>`;
+          return;
+        }
+        renderResults(data);
+      } catch (err) {
+        statusEl.innerHTML = `<span class="error">Upload failed: ${err.message}</span>`;
+      }
+    }
+
+    function renderResults(data) {
+      statusEl.innerHTML = `Parsed ${data.assignment_count} frequency assignment(s).`;
+      if (data.warnings && data.warnings.length) {
+        statusEl.innerHTML += data.warnings.map(w => `<div class="warning">${w}</div>`).join("");
+      }
+
+      const m = data.metadata;
+      metaEl.innerHTML = `
+        <dt>Licence No.</dt><dd>${m.licence_no || "—"}</dd>
+        <dt>Licensee</dt><dd>${m.licensee || "—"}</dd>
+        <dt>Address</dt><dd>${m.licensee_address || "—"}</dd>
+        <dt>Licence period</dt><dd>${m.licence_start || "?"} &ndash; ${m.licence_end || "?"}</dd>
+        <dt>PMSE ref.</dt><dd>${m.pmse_ref || "—"}</dd>
+      `;
+
+      const freqBlob = new Blob([data.wwb_frequency_list], { type: "text/plain" });
+      const csvBlob = new Blob([data.reference_csv], { type: "text/csv" });
+      dlFreq.href = URL.createObjectURL(freqBlob);
+      dlCsv.href = URL.createObjectURL(csvBlob);
+
+      const rows = data.assignments.slice(0, 20);
+      let html = "<tr><th>Freq (MHz)</th><th>Equipment</th><th>Model</th><th>Group</th><th>Site</th></tr>";
+      for (const a of rows) {
+        html += `<tr><td>${a.frequency_mhz.toFixed(3)}</td><td>${a.equipment_type}</td><td>${a.model}</td><td>${a.fee_category}</td><td>${a.site}</td></tr>`;
+      }
+      if (data.assignments.length > rows.length) {
+        html += `<tr><td colspan="5">&hellip; and ${data.assignments.length - rows.length} more</td></tr>`;
+      }
+      tableEl.innerHTML = html;
+
+      resultsEl.classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>
