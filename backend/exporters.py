@@ -2,6 +2,13 @@ import csv
 import io
 
 
+def suggested_names(assignments) -> list:
+    return [
+        f"{a.model or a.equipment_type or 'Ch'}-{i:02d}"
+        for i, a in enumerate(assignments, start=1)
+    ]
+
+
 def to_wwb_frequency_list(assignments) -> str:
     """WWB6/7 documented import format: bare MHz values, <=3 decimals,
     one per line, no duplicates, no extra text."""
@@ -34,11 +41,8 @@ def to_reference_csv(assignments) -> str:
             "Restrictions",
         ]
     )
-    group_seq = {}
-    for i, a in enumerate(assignments, start=1):
-        group_seq[a.fee_category] = group_seq.get(a.fee_category, 0) + 1
-        model_part = a.model or a.equipment_type or "Ch"
-        suggested_name = f"{model_part}-{i:02d}"
+    names = suggested_names(assignments)
+    for i, (a, suggested_name) in enumerate(zip(assignments, names), start=1):
         writer.writerow(
             [
                 i,

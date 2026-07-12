@@ -5,8 +5,9 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from exporters import to_reference_csv, to_wwb_frequency_list
+from exporters import suggested_names, to_reference_csv, to_wwb_frequency_list
 from parser import parse_pdf
+from show_generator import generate_show
 
 app = FastAPI(title="PMSE to Wireless Workbench")
 
@@ -40,6 +41,9 @@ async def convert(file: UploadFile = File(...)):
             "It may not be an Ofcom PMSE licence schedule.",
         )
 
+    for assignment, name in zip(result.assignments, suggested_names(result.assignments)):
+        assignment.suggested_name = name
+
     return {
         "metadata": {
             "licence_no": result.licence_no,
@@ -66,6 +70,12 @@ async def convert(file: UploadFile = File(...)):
         ],
         "wwb_frequency_list": to_wwb_frequency_list(result.assignments),
         "reference_csv": to_reference_csv(result.assignments),
+        "wwb_show_file": generate_show(
+            result.assignments,
+            show_name=f"Licence {result.licence_no}" if result.licence_no else "PMSE Import",
+            customer=result.licensee,
+            venue_name=result.assignments[0].site if result.assignments else "",
+        ),
     }
 
 

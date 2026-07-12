@@ -73,12 +73,21 @@
     <div class="downloads">
       <a href="#" id="dl-freq" download="wwb-frequency-list.txt">Download WWB frequency list (.txt)</a>
       <a href="#" id="dl-csv" download="frequency-reference.csv">Download reference sheet (.csv)</a>
+      <a href="#" id="dl-show" download="wwb-import.shw">Download WWB7 show file (.shw, experimental)</a>
     </div>
     <p class="note">
       The frequency list is the file to import directly into Wireless Workbench (Import &gt; frequencies from file).
       The reference sheet maps each frequency to a suggested name and its coordination group &mdash;
       Ofcom licences don't include per-mic names, so use it to manually label channels in WWB.
     </p>
+    <div class="warning">
+      <strong>The .shw show file is experimental.</strong> Shure doesn't document WWB's native show-file
+      format, so this was built by reverse-engineering a real working file &mdash; it has not been
+      validated by Shure. It simulates Shure AD4Q-A quad receivers (4 channels each) with the licensed
+      frequencies and names already set. <strong>Open it in Wireless Workbench and check it carefully
+      before relying on it for a real show</strong> &mdash; if in doubt, use the frequency list + reference
+      sheet instead.
+    </div>
 
     <table id="preview-table"></table>
   </div>
@@ -92,6 +101,7 @@
     const tableEl = document.getElementById("preview-table");
     const dlFreq = document.getElementById("dl-freq");
     const dlCsv = document.getElementById("dl-csv");
+    const dlShow = document.getElementById("dl-show");
 
     dropzone.addEventListener("click", () => fileInput.click());
     dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("drag"); });
@@ -140,8 +150,10 @@
 
       const freqBlob = new Blob([data.wwb_frequency_list], { type: "text/plain" });
       const csvBlob = new Blob([data.reference_csv], { type: "text/csv" });
+      const showBlob = new Blob([data.wwb_show_file], { type: "application/xml" });
       dlFreq.href = URL.createObjectURL(freqBlob);
       dlCsv.href = URL.createObjectURL(csvBlob);
+      dlShow.href = URL.createObjectURL(showBlob);
 
       const rows = data.assignments.slice(0, 20);
       let html = "<tr><th>Freq (MHz)</th><th>Equipment</th><th>Model</th><th>Group</th><th>Site</th></tr>";
