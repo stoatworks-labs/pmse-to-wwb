@@ -1,0 +1,12 @@
+services:
+  pmse-to-wwb:
+    build: .
+    image: pmse-to-wwb:latest
+    restart: unless-stopped
+    ports:
+      - "8420:8000"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
