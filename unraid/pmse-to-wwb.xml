@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>pmse-to-wwb</Name>
+  <Repository>ghcr.io/allansargeant/pmse-to-wwb:latest</Repository>
+  <Registry>https://ghcr.io/allansargeant/pmse-to-wwb</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/allansargeant/pmse-to-wwb/issues</Support>
+  <Project>https://github.com/allansargeant/pmse-to-wwb</Project>
+  <Overview>Upload an Ofcom PMSE radio mic licence PDF and generate frequency import files for Shure Wireless Workbench: a WWB-native frequency list, a named reference sheet, and an experimental WWB7 show file. Built with AI assistance (Claude) -- see the project README before relying on the show-file output for a real show.</Overview>
+  <Category>Tools:</Category>
+  <WebUI>http://[IP]:[PORT:8000]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/allansargeant/pmse-to-wwb/master/unraid/pmse-to-wwb.xml</TemplateURL>
+  <Icon/>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="WebUI Port" Target="8000" Default="8420" Mode="tcp" Description="Port to access the web interface" Type="Port" Display="always" Required="true" Mask="false">8420</Config>
+</Container>
