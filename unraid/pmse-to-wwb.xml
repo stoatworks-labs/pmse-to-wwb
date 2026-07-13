@@ -9,7 +9,7 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/allansargeant/pmse-to-wwb/issues</Support>
   <Project>https://github.com/allansargeant/pmse-to-wwb</Project>
-  <Overview>Upload an Ofcom PMSE radio mic licence PDF and generate frequency import files for Shure Wireless Workbench: a WWB-native frequency list, a named reference sheet, and an experimental WWB7 show file. Built with AI assistance (Claude) -- see the project README before relying on the show-file output for a real show.</Overview>
+  <Overview>Built with Claude AI (Anthropic). Upload an Ofcom PMSE radio mic licence PDF and generate frequency import files for Shure Wireless Workbench: a WWB-native frequency list, a named reference sheet, and an experimental WWB7 show file. See the project README before relying on the show-file output for a real show.</Overview>
   <Category>Tools:</Category>
   <WebUI>http://[IP]:[PORT:8000]/</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/allansargeant/pmse-to-wwb/master/unraid/pmse-to-wwb.xml</TemplateURL>

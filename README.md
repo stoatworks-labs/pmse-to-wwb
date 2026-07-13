@@ -1,15 +1,20 @@
 # PMSE Licence → Wireless Workbench
 
+> **🤖 Built with Claude AI.** This project was built with the help of [Claude](https://claude.ai)
+> (Anthropic's AI), working interactively with the repository owner. See [AI disclosure](#ai-disclosure)
+> below for details.
+
 A small web app that converts an Ofcom PMSE radio microphone licence schedule (PDF) into files
 for importing frequencies into Shure Wireless Workbench.
 
 ## AI disclosure
 
-**This project was built with the help of AI (Claude, by Anthropic)**, working interactively with
-the repository owner. AI wrote the majority of the code, including the PDF parser, the WWB export
-logic, and the experimental show-file generator. It was directed and reviewed by a human throughout,
-but the code has not been independently audited, and the WWB `.shw` show-file format in particular
-is an undocumented, reverse-engineered format — see the warning below before relying on it.
+**This project was built with the help of Claude AI (Anthropic)**, working interactively with
+the repository owner. Claude wrote the majority of the code, including the PDF parser, the WWB
+export logic, the experimental show-file generator, the Docker/CI setup, and this documentation.
+It was directed and reviewed by a human throughout, but the code has not been independently
+audited, and the WWB `.shw` show-file format in particular is an undocumented, reverse-engineered
+format — see the warning below before relying on it.
 
 If you're evaluating this code (for security, correctness, or anything else), treat it as
 AI-assisted rather than fully hand-reviewed production software.
@@ -42,5 +47,56 @@ Then open http://localhost:8420.
 
 ## Deploying
 
-The repo includes a `Dockerfile` and `render.yaml` for deploying to [Render](https://render.com)
-via its Blueprint feature (New → Blueprint, pick this repo).
+### Render
+
+The repo includes a `render.yaml` for deploying to [Render](https://render.com) via its
+Blueprint feature: **New → Blueprint**, pick this repo, and **Apply**. It builds from the
+`Dockerfile` and exposes a free-tier web service.
+
+### Docker / docker-compose (self-hosting)
+
+A pre-built image is published to GitHub Container Registry on every push to `master`:
+`ghcr.io/allansargeant/pmse-to-wwb:latest`.
+
+To run it with `docker compose`:
+
+```bash
+git clone https://github.com/allansargeant/pmse-to-wwb.git
+cd pmse-to-wwb
+docker compose up -d --build
+```
+
+This builds from the local `Dockerfile` and serves the app on **http://localhost:8420**
+(edit the `ports:` mapping in `docker-compose.yml` to change the host port). The container
+restarts automatically and has a healthcheck against `/health`.
+
+To run the pre-built GHCR image directly instead of building locally:
+
+```bash
+docker run -d --name pmse-to-wwb --restart unless-stopped \
+  -p 8420:8000 \
+  ghcr.io/allansargeant/pmse-to-wwb:latest
+```
+
+### Unraid
+
+An Unraid Community Applications template is included at
+[`unraid/pmse-to-wwb.xml`](unraid/pmse-to-wwb.xml), so the app can be added and managed from the
+Unraid Docker UI like any other addon:
+
+1. On your Unraid server, open a terminal (Unraid web UI → top-right icon → **Terminal**, or SSH
+   in) and download the template:
+   ```bash
+   wget -O /boot/config/plugins/dockerMan/templates-user/pmse-to-wwb.xml \
+     https://raw.githubusercontent.com/allansargeant/pmse-to-wwb/master/unraid/pmse-to-wwb.xml
+   ```
+2. In the Unraid web UI, go to **Docker → Add Container**.
+3. In the **Template** dropdown at the top, select **pmse-to-wwb** — the fields (image, port)
+   will be pre-filled.
+4. Review the **WebUI Port** (defaults to host `8420` → container `8000`) and click **Apply**.
+5. Once running, it appears in your Docker tab with a WebUI button, or visit
+   `http://<unraid-ip>:8420`.
+
+The template pulls `ghcr.io/allansargeant/pmse-to-wwb:latest`, so make sure that package is set
+to **public** visibility on GitHub (Packages → pmse-to-wwb → Package settings) — otherwise Unraid
+can't pull it without registry credentials.
