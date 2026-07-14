@@ -19,6 +19,8 @@ format — see the warning below before relying on it.
 If you're evaluating this code (for security, correctness, or anything else), treat it as
 AI-assisted rather than fully hand-reviewed production software.
 
+![PMSE Licence to Wireless Workbench upload page](docs/screenshot.png)
+
 ## What it does
 
 Upload an Ofcom PMSE licence schedule PDF and the app generates:
