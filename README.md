@@ -3,24 +3,21 @@
 > **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
 > (Anthropic), directed and reviewed by a human author. The code has not been independently
 > audited, and the WWB `.shw` show-file format in particular is an undocumented,
-> reverse-engineered format — see [AI disclosure](#ai-disclosure) below for details.
+> reverse-engineered format — open its output in Wireless Workbench and check it
+> carefully before relying on it for a real show.
 
 A small web app that converts an Ofcom PMSE radio microphone licence schedule (PDF) into files
 for importing frequencies into Shure Wireless Workbench.
 
-## AI disclosure
-
-**This codebase was created with Claude (Anthropic)**, directed and reviewed by a human
-author. Claude wrote the majority of the code, including the PDF parser, the WWB
-export logic, the experimental show-file generator, the Docker/CI setup, and this documentation.
-It was directed and reviewed by a human throughout, but the code has not been independently
-audited, and the WWB `.shw` show-file format in particular is an undocumented, reverse-engineered
-format — see the warning below before relying on it.
-
-If you're evaluating this code (for security, correctness, or anything else), treat it as
-AI-assisted rather than fully hand-reviewed production software.
-
 ![PMSE Licence to Wireless Workbench upload page](docs/screenshot.png)
+
+```mermaid
+flowchart LR
+    PDF["Ofcom PMSE<br/>licence PDF"] --> APP["pmse-to-wwb<br/>(PDF parser)"]
+    APP --> TXT[".txt frequency list<br/>(safe, documented format)"]
+    APP --> CSV[".csv reference sheet<br/>(names + coordination groups)"]
+    APP --> SHW[".shw WWB7 show file<br/>(experimental, reverse-engineered)"]
+```
 
 ## What it does
 
@@ -37,6 +34,12 @@ Upload an Ofcom PMSE licence schedule PDF and the app generates:
   Shure does not publish this file format; it was reverse-engineered from a real working show file
   and has not been validated by Shure. **Open it in WWB and check it carefully before relying on it
   for a real show.**
+
+## Status / TODO
+
+The `.txt` and `.csv` outputs use Shure's documented import format and are stable. The main open item:
+
+- [ ] **Validate the experimental `.shw` show file** across more WWB versions and receiver models — it's reverse-engineered from a single working file and unvalidated by Shure.
 
 ## Running locally
 
