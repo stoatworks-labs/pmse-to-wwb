@@ -1,16 +1,17 @@
 # PMSE Licence → Wireless Workbench
 
-> **🤖 Built with Claude AI.** This project was built with the help of [Claude](https://claude.ai)
-> (Anthropic's AI), working interactively with the repository owner. See [AI disclosure](#ai-disclosure)
-> below for details.
+> **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
+> (Anthropic), directed and reviewed by a human author. The code has not been independently
+> audited, and the WWB `.shw` show-file format in particular is an undocumented,
+> reverse-engineered format — see [AI disclosure](#ai-disclosure) below for details.
 
 A small web app that converts an Ofcom PMSE radio microphone licence schedule (PDF) into files
 for importing frequencies into Shure Wireless Workbench.
 
 ## AI disclosure
 
-**This project was built with the help of Claude AI (Anthropic)**, working interactively with
-the repository owner. Claude wrote the majority of the code, including the PDF parser, the WWB
+**This codebase was created with Claude (Anthropic)**, directed and reviewed by a human
+author. Claude wrote the majority of the code, including the PDF parser, the WWB
 export logic, the experimental show-file generator, the Docker/CI setup, and this documentation.
 It was directed and reviewed by a human throughout, but the code has not been independently
 audited, and the WWB `.shw` show-file format in particular is an undocumented, reverse-engineered
