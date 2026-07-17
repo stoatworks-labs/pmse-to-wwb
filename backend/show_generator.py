@@ -27,6 +27,18 @@ _FREQ_ENTRY_TPL = (TEMPLATES_DIR / "freq_entry_ad4q_a.xml.tpl").read_text()
 CHANNELS_PER_DEVICE = 4
 FILLER_NAME = "Unused"
 
+# The only band/receiver combination we have a real, structurally-verified
+# template for. Ofcom licences can cover other Shure bands (e.g. G50, H50,
+# K3E) that use different receiver hardware and compat profiles -- silently
+# labelling those as AD4Q-A/G56 would misrepresent real RF equipment, so we
+# refuse instead of guessing.
+SUPPORTED_BAND = "G56"
+
+
+class UnsupportedBandError(ValueError):
+    """Raised when assignments use a band/model this generator has no
+    verified template for."""
+
 _ORIG_DEVICE_ID = "83DD8AE3-F353-4378-B294-69C905285801"
 _ORIG_ZONE = "Room 8/9"
 _ORIG_CHANNEL_FREQS = ["550375", "551625", "551125", "554875"]
@@ -43,6 +55,12 @@ _ORIG_PROFILE_ZONE = "Room 10"
 def _cdata(text: str) -> str:
     safe = str(text).replace("]]>", "]] >")
     return f"<![CDATA[{safe}]]>"
+
+
+def _attr_escape(text: str) -> str:
+    """escape() only handles &, <, > -- also escape quotes since this is
+    used inside a double-quoted XML attribute value."""
+    return escape(text, {'"': "&quot;", "'": "&apos;"})
 
 
 def _new_id() -> str:
@@ -116,7 +134,21 @@ def generate_show(
 ) -> str:
     """assignments: list of objects with .frequency_mhz (float) and a name
     (falls back to positional numbering if not present). Groups into
-    simulated AD4Q-A quad receivers, 4 channels each."""
+    simulated AD4Q-A quad receivers, 4 channels each.
+
+    Raises UnsupportedBandError if any assignment isn't on the G56 band,
+    since that's the only band/receiver this generator has a verified
+    template for.
+    """
+    unsupported = sorted(
+        {(a.model or "").strip() for a in assignments if (a.model or "").strip().upper() != SUPPORTED_BAND}
+    )
+    if unsupported:
+        raise UnsupportedBandError(
+            f"Show-file generation only supports the {SUPPORTED_BAND} band (Shure AD4Q-A "
+            f"template). This licence includes band(s) {', '.join(unsupported)}, which have "
+            "no verified template, so no .shw file was generated for it."
+        )
 
     now = datetime.now()
     chunks = list(_chunk(assignments, CHANNELS_PER_DEVICE))
@@ -150,21 +182,19 @@ def generate_show(
 
         profiles_xml.append(_build_profile(zone))
 
-    total_channels = len(chunks) * CHANNELS_PER_DEVICE
-
     out = _SKELETON
     out = out.replace("{{SHOW_NAME}}", escape(show_name))
     out = out.replace("{{CUSTOMER}}", escape(customer))
     out = out.replace("{{POC_NAME}}", escape(poc_name))
     out = out.replace("{{VENUE_NAME}}", escape(venue_name))
     out = out.replace("{{VENUE_ADDRESS}}", escape(venue_address))
-    out = out.replace("{{BAND_PLAN_NAME}}", escape(show_name)[:40] or "List 1")
+    out = out.replace("{{BAND_PLAN_NAME}}", _attr_escape(show_name[:40]) or "List 1")
     out = out.replace("{{GROUP_NAME}}", "Ofcom Licence")
     out = out.replace("{{DATE}}", now.strftime("%a %b %d %Y"))
     out = out.replace("{{TIME}}", now.strftime("%H:%M:%S"))
     out = out.replace("{{INVENTORY_DEVICES}}", "".join(devices_xml))
     out = out.replace("{{CHANNEL_IDS}}", "".join(channel_ids_xml))
-    out = out.replace("{{MIC_CHANNEL_COUNT}}", str(total_channels))
+    out = out.replace("{{MIC_CHANNEL_COUNT}}", str(len(all_freqs_khz)))
     out = out.replace("{{FREQ_ENTRIES}}", "".join(freq_entries_xml))
     out = out.replace("{{PROFILE_COUNT}}", str(len(profiles_xml)))
     out = out.replace("{{COMPAT_PROFILES}}", "".join(profiles_xml))

@@ -53,7 +53,7 @@
     text-decoration: none;
     font-size: 0.9rem;
   }
-  .hidden { display: none; }
+  .hidden { display: none !important; }
   .note { font-size: 0.82rem; color: #666; margin-top: 0.4rem; }
 </style>
 </head>
@@ -80,7 +80,7 @@
       The reference sheet maps each frequency to a suggested name and its coordination group &mdash;
       Ofcom licences don't include per-mic names, so use it to manually label channels in WWB.
     </p>
-    <div class="warning">
+    <div class="warning" id="show-file-warning">
       <strong>The .shw show file is experimental.</strong> Shure doesn't document WWB's native show-file
       format, so this was built by reverse-engineering a real working file &mdash; it has not been
       validated by Shure. It simulates Shure AD4Q-A quad receivers (4 channels each) with the licensed
@@ -150,10 +150,19 @@
 
       const freqBlob = new Blob([data.wwb_frequency_list], { type: "text/plain" });
       const csvBlob = new Blob([data.reference_csv], { type: "text/csv" });
-      const showBlob = new Blob([data.wwb_show_file], { type: "application/xml" });
       dlFreq.href = URL.createObjectURL(freqBlob);
       dlCsv.href = URL.createObjectURL(csvBlob);
-      dlShow.href = URL.createObjectURL(showBlob);
+
+      const showFileWarning = document.getElementById("show-file-warning");
+      if (data.wwb_show_file) {
+        const showBlob = new Blob([data.wwb_show_file], { type: "application/xml" });
+        dlShow.href = URL.createObjectURL(showBlob);
+        dlShow.classList.remove("hidden");
+        showFileWarning.classList.remove("hidden");
+      } else {
+        dlShow.classList.add("hidden");
+        showFileWarning.classList.add("hidden");
+      }
 
       const rows = data.assignments.slice(0, 20);
       let html = "<tr><th>Freq (MHz)</th><th>Equipment</th><th>Model</th><th>Group</th><th>Site</th></tr>";

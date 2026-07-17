@@ -7,12 +7,14 @@ from fastapi.staticfiles import StaticFiles
 
 from exporters import suggested_names, to_reference_csv, to_wwb_frequency_list
 from parser import parse_pdf
-from show_generator import generate_show
+from show_generator import UnsupportedBandError, generate_show
 
 app = FastAPI(title="PMSE to Wireless Workbench")
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # Ofcom schedules are typically <1MB; well clear of that.
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -26,8 +28,14 @@ async def convert(file: UploadFile = File(...)):
         raise HTTPException(400, "Please upload a PDF file.")
 
     with tempfile.NamedTemporaryFile(suffix=".pdf") as tmp:
-        contents = await file.read()
-        tmp.write(contents)
+        total = 0
+        while chunk := await file.read(1024 * 1024):
+            total += len(chunk)
+            if total > MAX_UPLOAD_BYTES:
+                raise HTTPException(
+                    413, f"PDF exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)}MB upload limit."
+                )
+            tmp.write(chunk)
         tmp.flush()
         try:
             result = parse_pdf(tmp.name)
@@ -43,6 +51,17 @@ async def convert(file: UploadFile = File(...)):
 
     for assignment, name in zip(result.assignments, suggested_names(result.assignments)):
         assignment.suggested_name = name
+
+    show_file = None
+    try:
+        show_file = generate_show(
+            result.assignments,
+            show_name=f"Licence {result.licence_no}" if result.licence_no else "PMSE Import",
+            customer=result.licensee,
+            venue_name=result.assignments[0].site if result.assignments else "",
+        )
+    except UnsupportedBandError as exc:
+        result.warnings.append(str(exc))
 
     return {
         "metadata": {
@@ -70,12 +89,7 @@ async def convert(file: UploadFile = File(...)):
         ],
         "wwb_frequency_list": to_wwb_frequency_list(result.assignments),
         "reference_csv": to_reference_csv(result.assignments),
-        "wwb_show_file": generate_show(
-            result.assignments,
-            show_name=f"Licence {result.licence_no}" if result.licence_no else "PMSE Import",
-            customer=result.licensee,
-            venue_name=result.assignments[0].site if result.assignments else "",
-        ),
+        "wwb_show_file": show_file,
     }
 
 
