@@ -37,9 +37,15 @@ Upload an Ofcom PMSE licence schedule PDF and the app generates:
 
 ## Status / TODO
 
-The `.txt` and `.csv` outputs use Shure's documented import format and are stable. The main open item:
+The `.txt` and `.csv` outputs use Shure's documented import format and are stable. The show-file
+generator has a [pytest suite](backend/tests) (run in CI on every push) covering the parser, both
+export formats, and the show file's internal consistency (device/channel counts, XML escaping,
+filler-channel handling), and it refuses to generate a `.shw` for any band other than G56 rather
+than silently mislabelling other Shure receiver hardware. The main open item:
 
-- [ ] **Validate the experimental `.shw` show file** across more WWB versions and receiver models — it's reverse-engineered from a single working file and unvalidated by Shure.
+- [ ] **Validate the experimental `.shw` show file in real Wireless Workbench** across more WWB
+  versions and receiver models beyond the single AD4Q-A/G56 file it was reverse-engineered from —
+  automated tests can check internal consistency, but not whether WWB itself accepts the file.
 
 ## Running locally
 
