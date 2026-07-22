@@ -68,7 +68,8 @@ Blueprint feature: **New → Blueprint**, pick this repo, and **Apply**. It buil
 ### Docker / docker-compose (self-hosting)
 
 A pre-built image is published to GitHub Container Registry on every push to `master`:
-`ghcr.io/allansargeant/pmse-to-wwb:latest`.
+`ghcr.io/allansargeant/pmse-to-wwb:latest`. It is multi-arch (`linux/amd64` + `linux/arm64`),
+so it runs on ARM hosts (Raspberry Pi, Apple-Silicon Docker, ARM servers) as well as x86.
 
 To run it with `docker compose`:
 
