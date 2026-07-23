@@ -8,13 +8,15 @@
   :root { color-scheme: light dark; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    max-width: 780px;
+    max-width: 920px;
     margin: 3rem auto;
     padding: 0 1.25rem;
     line-height: 1.5;
   }
   h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.05rem; margin: 2rem 0 0.25rem; }
   p.sub { color: #666; margin-top: 0; }
+  p.section-note { font-size: 0.85rem; color: #666; margin-top: 0.15rem; }
   .dropzone {
     border: 2px dashed #999;
     border-radius: 10px;
@@ -25,25 +27,43 @@
   }
   .dropzone.drag { border-color: #2b6cb0; background: rgba(43,108,176,0.06); }
   .dropzone input { display: none; }
+  button.primary, button.secondary {
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
   button.primary {
     background: #2b6cb0;
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 0.6rem 1.1rem;
-    font-size: 0.95rem;
-    cursor: pointer;
   }
-  button.primary:disabled { opacity: 0.5; cursor: default; }
+  button.secondary {
+    background: transparent;
+    color: #2b6cb0;
+    border: 1px solid #2b6cb0;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
   .status { margin-top: 1rem; font-size: 0.9rem; }
   .error { color: #c0392b; }
   .warning { color: #b7791f; background: #fffaf0; border: 1px solid #f6ad55; padding: 0.6rem 0.8rem; border-radius: 6px; margin-top: 1rem; }
-  table { border-collapse: collapse; width: 100%; margin-top: 1rem; font-size: 0.85rem; }
+  table { border-collapse: collapse; width: 100%; margin-top: 0.75rem; font-size: 0.85rem; }
   th, td { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid #ddd; }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.85rem;
+    border: 1px solid #999;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+  }
+  input.narrow { width: 4.5rem; }
   .meta { margin-top: 1.5rem; font-size: 0.9rem; }
   .meta dt { font-weight: 600; float: left; width: 11rem; clear: left; }
   .meta dd { margin: 0 0 0.25rem 11rem; }
-  .downloads { margin-top: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .downloads { margin-top: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
   .downloads a {
     display: inline-block;
     border: 1px solid #2b6cb0;
@@ -53,6 +73,8 @@
     text-decoration: none;
     font-size: 0.9rem;
   }
+  .toolbar { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-top: 0.5rem; }
+  .toolbar label { font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem; }
   .hidden { display: none !important; }
   .note { font-size: 0.82rem; color: #666; margin-top: 0.4rem; }
 </style>
@@ -73,23 +95,57 @@
     <div class="downloads">
       <a href="#" id="dl-freq" download="wwb-frequency-list.txt">Download WWB frequency list (.txt)</a>
       <a href="#" id="dl-csv" download="frequency-reference.csv">Download reference sheet (.csv)</a>
-      <a href="#" id="dl-show" download="wwb-import.shw">Download WWB7 show file (.shw, experimental)</a>
     </div>
     <p class="note">
       The frequency list is the file to import directly into Wireless Workbench (Import &gt; frequencies from file).
       The reference sheet maps each frequency to a suggested name and its coordination group &mdash;
       Ofcom licences don't include per-mic names, so use it to manually label channels in WWB.
     </p>
-    <div class="warning" id="show-file-warning">
-      <strong>The .shw show file is experimental.</strong> Shure doesn't document WWB's native show-file
-      format, so this was built by reverse-engineering a real working file &mdash; it has not been
-      validated by Shure. It simulates Shure AD4Q-A quad receivers (4 channels each) with the licensed
-      frequencies and names already set. <strong>Open it in Wireless Workbench and check it carefully
-      before relying on it for a real show</strong> &mdash; if in doubt, use the frequency list + reference
-      sheet instead.
-    </div>
 
     <table id="preview-table"></table>
+
+    <h2>WWB7 show file (experimental)</h2>
+    <p class="section-note">
+      Assign each frequency to a receiver, name the channels, and optionally set receiver IP
+      addresses, then generate a native WWB7 show file with everything pre-configured.
+    </p>
+
+    <div class="toolbar">
+      <label>Channels per receiver:
+        <select id="default-channel-count" class="narrow">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="4" selected>4</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+        </select>
+      </label>
+      <button class="secondary" id="btn-regroup">Auto-group channels</button>
+      <button class="secondary" id="btn-auto-ip">Auto-assign placeholder IPs</button>
+    </div>
+
+    <table id="channels-table"></table>
+
+    <h3>Receivers</h3>
+    <table id="receivers-table"></table>
+
+    <div class="toolbar">
+      <button class="primary" id="btn-generate-show">Generate WWB show file</button>
+    </div>
+
+    <div id="show-file-result" class="hidden">
+      <div class="downloads">
+        <a href="#" id="dl-show" download="wwb-import.shw">Download WWB7 show file (.shw)</a>
+      </div>
+      <div class="warning">
+        <strong>The .shw show file is experimental.</strong> Shure doesn't document WWB's native show-file
+        format, so this was built by reverse-engineering a real working file &mdash; it has not been
+        validated by Shure. Receiver IP addresses in particular are a best-effort guess (we've never seen
+        a real show file with one configured) &mdash; verify/set them again inside WWB if they don't take.
+        <strong>Open the file in Wireless Workbench and check it carefully before relying on it for a
+        real show.</strong>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -102,6 +158,16 @@
     const dlFreq = document.getElementById("dl-freq");
     const dlCsv = document.getElementById("dl-csv");
     const dlShow = document.getElementById("dl-show");
+    const channelsTableEl = document.getElementById("channels-table");
+    const receiversTableEl = document.getElementById("receivers-table");
+    const showFileResultEl = document.getElementById("show-file-result");
+    const defaultChannelCountEl = document.getElementById("default-channel-count");
+
+    let maxChannelsPerReceiver = 8;
+    // channels: [{frequency_mhz, band, name, receiver}] -- receiver is a 1-based group number
+    let channels = [];
+    // receivers: {receiverNum: {name, channel_count, ip_address}}
+    let receivers = {};
 
     dropzone.addEventListener("click", () => fileInput.click());
     dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("drag"); });
@@ -117,6 +183,7 @@
 
     async function handleFile(file) {
       resultsEl.classList.add("hidden");
+      showFileResultEl.classList.add("hidden");
       statusEl.innerHTML = `Parsing ${file.name}&hellip;`;
       const formData = new FormData();
       formData.append("file", file);
@@ -153,17 +220,6 @@
       dlFreq.href = URL.createObjectURL(freqBlob);
       dlCsv.href = URL.createObjectURL(csvBlob);
 
-      const showFileWarning = document.getElementById("show-file-warning");
-      if (data.wwb_show_file) {
-        const showBlob = new Blob([data.wwb_show_file], { type: "application/xml" });
-        dlShow.href = URL.createObjectURL(showBlob);
-        dlShow.classList.remove("hidden");
-        showFileWarning.classList.remove("hidden");
-      } else {
-        dlShow.classList.add("hidden");
-        showFileWarning.classList.add("hidden");
-      }
-
       const rows = data.assignments.slice(0, 20);
       let html = "<tr><th>Freq (MHz)</th><th>Equipment</th><th>Model</th><th>Group</th><th>Site</th></tr>";
       for (const a of rows) {
@@ -174,8 +230,165 @@
       }
       tableEl.innerHTML = html;
 
+      maxChannelsPerReceiver = data.max_channels_per_receiver || 8;
+      channels = data.assignments.map((a) => ({
+        frequency_mhz: a.frequency_mhz,
+        band: a.model,
+        name: a.suggested_name,
+        receiver: 1,
+      }));
+      regroupChannels(parseInt(defaultChannelCountEl.value, 10));
+
       resultsEl.classList.remove("hidden");
+      showFileResultEl.classList.add("hidden");
     }
+
+    function regroupChannels(size) {
+      channels.forEach((ch, i) => { ch.receiver = Math.floor(i / size) + 1; });
+      receivers = {};
+      syncReceiversFromChannels();
+      renderChannelsTable();
+      renderReceiversTable();
+    }
+
+    function syncReceiversFromChannels() {
+      const inUse = new Set(channels.map((c) => c.receiver));
+      const defaultSize = parseInt(defaultChannelCountEl.value, 10) || 4;
+      for (const num of inUse) {
+        if (!receivers[num]) {
+          receivers[num] = { name: `Receiver ${num}`, channel_count: defaultSize, ip_address: "" };
+        }
+      }
+      // Drop receivers no longer referenced by any channel.
+      for (const num of Object.keys(receivers)) {
+        if (!inUse.has(parseInt(num, 10))) delete receivers[num];
+      }
+      // Make sure each receiver's capacity covers however many channels it now has.
+      const counts = {};
+      channels.forEach((c) => { counts[c.receiver] = (counts[c.receiver] || 0) + 1; });
+      for (const [num, count] of Object.entries(counts)) {
+        if (receivers[num].channel_count < count) {
+          receivers[num].channel_count = Math.min(maxChannelsPerReceiver, count);
+        }
+      }
+    }
+
+    function renderChannelsTable() {
+      let html = "<tr><th>Freq (MHz)</th><th>Band</th><th>Channel name</th><th>Receiver #</th></tr>";
+      channels.forEach((ch, i) => {
+        html += `<tr>
+          <td>${ch.frequency_mhz.toFixed(3)}</td>
+          <td>${ch.band}</td>
+          <td><input type="text" data-role="channel-name" data-index="${i}" value="${escapeAttr(ch.name)}"></td>
+          <td><input type="number" class="narrow" min="1" data-role="channel-receiver" data-index="${i}" value="${ch.receiver}"></td>
+        </tr>`;
+      });
+      channelsTableEl.innerHTML = html;
+    }
+
+    function renderReceiversTable() {
+      let html = "<tr><th>Receiver #</th><th>Name / zone</th><th>Channel capacity</th><th>IP address (optional)</th></tr>";
+      const nums = Object.keys(receivers).map(Number).sort((a, b) => a - b);
+      for (const num of nums) {
+        const r = receivers[num];
+        html += `<tr>
+          <td>${num}</td>
+          <td><input type="text" data-role="receiver-name" data-num="${num}" value="${escapeAttr(r.name)}"></td>
+          <td><input type="number" class="narrow" min="1" max="${maxChannelsPerReceiver}" data-role="receiver-count" data-num="${num}" value="${r.channel_count}"></td>
+          <td><input type="text" data-role="receiver-ip" data-num="${num}" value="${escapeAttr(r.ip_address || "")}" placeholder="e.g. 192.168.1.101"></td>
+        </tr>`;
+      }
+      receiversTableEl.innerHTML = html;
+    }
+
+    function escapeAttr(s) {
+      return String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+
+    channelsTableEl.addEventListener("input", (e) => {
+      const el = e.target;
+      const i = parseInt(el.dataset.index, 10);
+      if (el.dataset.role === "channel-name") {
+        channels[i].name = el.value;
+      } else if (el.dataset.role === "channel-receiver") {
+        const newNum = parseInt(el.value, 10);
+        if (newNum >= 1) {
+          channels[i].receiver = newNum;
+          syncReceiversFromChannels();
+          renderReceiversTable();
+        }
+      }
+    });
+
+    receiversTableEl.addEventListener("input", (e) => {
+      const el = e.target;
+      const num = el.dataset.num;
+      if (!receivers[num]) return;
+      if (el.dataset.role === "receiver-name") {
+        receivers[num].name = el.value;
+      } else if (el.dataset.role === "receiver-count") {
+        const v = parseInt(el.value, 10);
+        if (v >= 1) receivers[num].channel_count = v;
+      } else if (el.dataset.role === "receiver-ip") {
+        receivers[num].ip_address = el.value;
+      }
+    });
+
+    document.getElementById("btn-regroup").addEventListener("click", () => {
+      regroupChannels(parseInt(defaultChannelCountEl.value, 10));
+    });
+
+    document.getElementById("btn-auto-ip").addEventListener("click", () => {
+      const nums = Object.keys(receivers).map(Number).sort((a, b) => a - b);
+      let next = 101;
+      for (const num of nums) {
+        if (!receivers[num].ip_address) {
+          receivers[num].ip_address = `192.168.1.${next}`;
+          next += 1;
+        }
+      }
+      renderReceiversTable();
+    });
+
+    document.getElementById("btn-generate-show").addEventListener("click", async () => {
+      const nums = Object.keys(receivers).map(Number).sort((a, b) => a - b);
+      const payloadReceivers = nums.map((num) => {
+        const r = receivers[num];
+        const chans = channels
+          .filter((c) => c.receiver === num)
+          .map((c) => ({ frequency_mhz: c.frequency_mhz, name: c.name, band: c.band }));
+        return {
+          name: r.name,
+          channel_count: r.channel_count,
+          ip_address: r.ip_address || null,
+          channels: chans,
+        };
+      });
+
+      const metaDl = document.querySelectorAll(".meta dd")[0];
+      const showName = metaDl ? metaDl.textContent : "PMSE Import";
+
+      statusEl.innerHTML = "Generating show file&hellip;";
+      try {
+        const resp = await fetch("/api/generate-show", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ show_name: showName, receivers: payloadReceivers }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          statusEl.innerHTML = `<span class="error">${data.detail || "Could not generate show file."}</span>`;
+          showFileResultEl.classList.add("hidden");
+          return;
+        }
+        statusEl.innerHTML = "Show file generated.";
+        const showBlob = new Blob([data.wwb_show_file], { type: "application/xml" });
+        dlShow.href = URL.createObjectURL(showBlob);
+        showFileResultEl.classList.remove("hidden");
+      } catch (err) {
+        statusEl.innerHTML = `<span class="error">Request failed: ${err.message}</span>`;
+      }
+    });
   </script>
 </body>
 </html>

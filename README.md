@@ -16,7 +16,8 @@ flowchart LR
     PDF["Ofcom PMSE<br/>licence PDF"] --> APP["pmse-to-wwb<br/>(PDF parser)"]
     APP --> TXT[".txt frequency list<br/>(safe, documented format)"]
     APP --> CSV[".csv reference sheet<br/>(names + coordination groups)"]
-    APP --> SHW[".shw WWB7 show file<br/>(experimental, reverse-engineered)"]
+    APP --> EDIT["Receiver editor<br/>(group channels, name, IP)"]
+    EDIT --> SHW[".shw WWB7 show file<br/>(experimental, reverse-engineered)"]
 ```
 
 ## What it does
@@ -30,22 +31,38 @@ Upload an Ofcom PMSE licence schedule PDF and the app generates:
   coordination/fee group, since the licence itself has no per-mic names. Use it to manually label
   channels in WWB.
 - **WWB7 show file** (`.shw`, **experimental**) — a native Wireless Workbench show file with
-  channels already named and frequencies already assigned, simulating Shure AD4Q-A quad receivers.
-  Shure does not publish this file format; it was reverse-engineered from a real working show file
-  and has not been validated by Shure. **Open it in WWB and check it carefully before relying on it
-  for a real show.**
+  channels already named and frequencies already assigned. After parsing, an in-page editor lets
+  you:
+  - group the licensed frequencies into receivers of any channel count (1–8), not just fixed
+    4-channel blocks, to match whatever hardware you actually have;
+  - name every channel (auto-generated defaults you can overwrite);
+  - set an IP address per receiver, or click **Auto-assign placeholder IPs** to fill in sequential
+    private addresses for anything left blank.
+
+  Each simulated receiver is built from a real, structurally-verified Shure AD4Q-A (G56 band) XML
+  fragment — Shure does not publish this file format, so it was reverse-engineered from a real
+  working show file and has not been validated by Shure. The generator refuses to build a show file
+  for any band other than G56, since that's the only one with a verified template. **Open it in WWB
+  and check it carefully before relying on it for a real show** — receiver IP addresses especially
+  are a best-effort guess (see [Status / TODO](#status--todo)).
 
 ## Status / TODO
 
 The `.txt` and `.csv` outputs use Shure's documented import format and are stable. The show-file
 generator has a [pytest suite](backend/tests) (run in CI on every push) covering the parser, both
 export formats, and the show file's internal consistency (device/channel counts, XML escaping,
-filler-channel handling), and it refuses to generate a `.shw` for any band other than G56 rather
-than silently mislabelling other Shure receiver hardware. The main open item:
+filler-channel handling, arbitrary receiver/channel groupings), and it refuses to generate a `.shw`
+for any band other than G56 rather than silently mislabelling other Shure receiver hardware. Open
+items:
 
 - [ ] **Validate the experimental `.shw` show file in real Wireless Workbench** across more WWB
   versions and receiver models beyond the single AD4Q-A/G56 file it was reverse-engineered from —
   automated tests can check internal consistency, but not whether WWB itself accepts the file.
+- [ ] **Verify the receiver IP-address encoding against a real WWB show file.** The sample file
+  this was built from never had a device with a real IP configured, so the packed-integer
+  `ip_address` value and `ip_mode=1` for "static" are both best-effort guesses, not something we've
+  confirmed WWB actually accepts. If a receiver's IP doesn't take effect after importing, set it
+  again inside WWB.
 
 ## Running locally
 

@@ -10,8 +10,18 @@ hand-built equivalent.
 
 This has not been validated by Shure and should be treated as best-effort:
 open the generated file in WWB and check it before relying on it for a show.
+
+Receivers are user-defined (name, channel capacity, optional IP address) --
+see generate_show()'s docstring for the exact shape. The IP address fields
+in particular are UNVERIFIED: the real sample file this was reverse
+engineered from never had a device with a real IP configured, so the
+ip_mode/ip_address encoding here is a best-effort guess (packed 32-bit
+IPv4 address, ip_mode=1 for static), not something we've seen WWB actually
+accept. Treat any IP baked into a generated show file as a starting point
+to verify/correct inside WWB, not a guarantee.
 """
 
+import ipaddress
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -20,12 +30,14 @@ from xml.sax.saxutils import escape
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 _SKELETON = (TEMPLATES_DIR / "skeleton.xml.tpl").read_text()
-_DEVICE_TPL = (TEMPLATES_DIR / "device_ad4q_a.xml.tpl").read_text()
+_DEVICE_SHELL_TPL = (TEMPLATES_DIR / "device_shell_ad4q_a.xml.tpl").read_text()
+_CHANNEL_TPL = (TEMPLATES_DIR / "channel_ad4q_a.xml.tpl").read_text()
 _PROFILE_TPL = (TEMPLATES_DIR / "profile_ad4q_a.xml.tpl").read_text()
 _FREQ_ENTRY_TPL = (TEMPLATES_DIR / "freq_entry_ad4q_a.xml.tpl").read_text()
 
-CHANNELS_PER_DEVICE = 4
 FILLER_NAME = "Unused"
+FILLER_FREQ_KHZ = "470100"  # low edge of the G56 range; channel is marked inactive regardless.
+MAX_CHANNELS_PER_RECEIVER = 8  # matches the template's regtx1..8 slots; a sanity ceiling, not a real hardware limit we've verified.
 
 # The only band/receiver combination we have a real, structurally-verified
 # template for. Ofcom licences can cover other Shure bands (e.g. G50, H50,
@@ -34,22 +46,22 @@ FILLER_NAME = "Unused"
 # refuse instead of guessing.
 SUPPORTED_BAND = "G56"
 
-
-class UnsupportedBandError(ValueError):
-    """Raised when assignments use a band/model this generator has no
-    verified template for."""
-
-_ORIG_DEVICE_ID = "83DD8AE3-F353-4378-B294-69C905285801"
-_ORIG_ZONE = "Room 8/9"
-_ORIG_CHANNEL_FREQS = ["550375", "551625", "551125", "554875"]
-_ORIG_CHANNEL_NAME_TAG = '<channel_name type="10"><![CDATA[Shure]]></channel_name>'
-
-_ORIG_FE_ID = f"{_ORIG_DEVICE_ID}-0"
+_ORIG_FE_ID = "83DD8AE3-F353-4378-B294-69C905285801-0"
 _ORIG_FE_ZONE = "Room 8/9"
 _ORIG_FE_VALUE = "578875"
 _ORIG_FE_CHANN_NUM = "0"
 
 _ORIG_PROFILE_ZONE = "Room 10"
+
+
+class UnsupportedBandError(ValueError):
+    """Raised when a channel uses a band/model this generator has no
+    verified template for."""
+
+
+class ReceiverConfigError(ValueError):
+    """Raised for invalid receiver configuration: too many channels for the
+    receiver's declared capacity, or an unparseable IP address."""
 
 
 def _cdata(text: str) -> str:
@@ -67,35 +79,38 @@ def _new_id() -> str:
     return str(uuid.uuid4()).upper()
 
 
-def _build_device(device_id: str, zone: str, freqs_khz: list, names: list) -> str:
-    block = _DEVICE_TPL.replace(
-        f'<id dcid="04DFAE08-FD5A-11E3-A18A-0015C5F3F612">{_ORIG_DEVICE_ID}</id>',
-        f'<id dcid="04DFAE08-FD5A-11E3-A18A-0015C5F3F612">{device_id}</id>',
-        1,
-    )
-    block = block.replace(
-        f"<zone type=\"12\">{_ORIG_ZONE}</zone>",
-        f'<zone type="12">{escape(zone)}</zone>',
-        1,
-    )
+def _ip_to_int(ip_str: str) -> int:
+    try:
+        return int(ipaddress.IPv4Address(ip_str.strip()))
+    except (ipaddress.AddressValueError, ValueError) as exc:
+        raise ReceiverConfigError(f"'{ip_str}' is not a valid IPv4 address.") from exc
 
-    parts = block.split(_ORIG_CHANNEL_NAME_TAG)
-    if len(parts) != CHANNELS_PER_DEVICE + 1:
-        raise RuntimeError("device template channel_name pattern not found as expected")
-    rebuilt = parts[0]
-    for i in range(CHANNELS_PER_DEVICE):
-        name = names[i] if i < len(names) else FILLER_NAME
-        rebuilt += f'<channel_name type="10">{_cdata(name)}</channel_name>'
-        rebuilt += parts[i + 1]
-    block = rebuilt
 
-    for i, orig_freq in enumerate(_ORIG_CHANNEL_FREQS):
-        freq = freqs_khz[i] if i < len(freqs_khz) else orig_freq
-        block = block.replace(
-            f'<frequency type="3">{orig_freq}</frequency>',
-            f'<frequency type="3">{freq}</frequency>',
-            1,
-        )
+def _build_channel(number: int, freq_khz: str, name: str) -> str:
+    block = _CHANNEL_TPL
+    block = block.replace("{{CHANNEL_NUMBER}}", str(number))
+    block = block.replace("{{CHANNEL_NAME}}", _cdata(name))
+    block = block.replace("{{FREQUENCY_KHZ}}", str(freq_khz))
+    block = block.replace("{{REMOTE_NAME}}", escape(f"RemChannel{number}"))
+    return block
+
+
+def _build_device(
+    device_id: str, device_name: str, zone: str, ip_address: str, channels_xml: str
+) -> str:
+    ip_mode = "0"
+    ip_address_int = "0"
+    if ip_address:
+        ip_address_int = str(_ip_to_int(ip_address))
+        ip_mode = "1"  # best guess for "static" -- unverified, see module docstring.
+
+    block = _DEVICE_SHELL_TPL
+    block = block.replace("{{DEVICE_ID}}", device_id)
+    block = block.replace("{{DEVICE_NAME}}", _cdata(device_name))
+    block = block.replace("{{ZONE}}", escape(zone))
+    block = block.replace("{{IP_MODE}}", ip_mode)
+    block = block.replace("{{IP_ADDRESS}}", ip_address_int)
+    block = block.replace("{{CHANNELS}}", channels_xml)
     return block
 
 
@@ -119,29 +134,38 @@ def _build_profile(zone: str) -> str:
     )
 
 
-def _chunk(items, size):
-    for i in range(0, len(items), size):
-        yield items[i : i + size]
-
-
 def generate_show(
-    assignments,
+    receivers,
     show_name: str = "PMSE Licence Import",
     customer: str = "",
     poc_name: str = "",
     venue_name: str = "",
     venue_address: str = "",
 ) -> str:
-    """assignments: list of objects with .frequency_mhz (float) and a name
-    (falls back to positional numbering if not present). Groups into
-    simulated AD4Q-A quad receivers, 4 channels each.
+    """receivers: list of dicts, each describing one simulated AD4Q-A-style
+    receiver:
+        {
+            "name": str,               # zone/label; auto-generated if blank
+            "channel_count": int,      # receiver's channel capacity (1-8)
+            "ip_address": str | None,  # optional dotted-quad; see module docstring
+            "channels": [
+                {"frequency_mhz": float, "name": str, "band": str},
+                ...  # up to channel_count entries; remaining slots become
+                     # inactive "Unused" filler channels
+            ],
+        }
 
-    Raises UnsupportedBandError if any assignment isn't on the G56 band,
-    since that's the only band/receiver this generator has a verified
-    template for.
+    Raises UnsupportedBandError if any channel's band isn't G56 (the only
+    band/receiver this generator has a verified template for), or
+    ReceiverConfigError for an over-capacity receiver or an unparseable IP.
     """
     unsupported = sorted(
-        {(a.model or "").strip() for a in assignments if (a.model or "").strip().upper() != SUPPORTED_BAND}
+        {
+            (ch.get("band") or "").strip()
+            for r in receivers
+            for ch in r["channels"]
+            if (ch.get("band") or "").strip().upper() != SUPPORTED_BAND
+        }
     )
     if unsupported:
         raise UnsupportedBandError(
@@ -150,8 +174,20 @@ def generate_show(
             "no verified template, so no .shw file was generated for it."
         )
 
+    for r in receivers:
+        count = r.get("channel_count", 0)
+        if not (1 <= count <= MAX_CHANNELS_PER_RECEIVER):
+            raise ReceiverConfigError(
+                f"Receiver '{r.get('name', '?')}' has channel_count={count}; "
+                f"must be between 1 and {MAX_CHANNELS_PER_RECEIVER}."
+            )
+        if len(r["channels"]) > count:
+            raise ReceiverConfigError(
+                f"Receiver '{r.get('name', '?')}' was given {len(r['channels'])} channel(s) "
+                f"but only has capacity for {count}."
+            )
+
     now = datetime.now()
-    chunks = list(_chunk(assignments, CHANNELS_PER_DEVICE))
 
     devices_xml = []
     channel_ids_xml = []
@@ -159,27 +195,42 @@ def generate_show(
     profiles_xml = []
     all_freqs_khz = []
 
-    for chunk_idx, chunk in enumerate(chunks):
+    for r_index, r in enumerate(receivers, start=1):
         device_id = _new_id()
-        start_n = chunk_idx * CHANNELS_PER_DEVICE + 1
-        end_n = start_n + len(chunk) - 1
-        zone = f"Ch {start_n}-{end_n}" if len(chunk) > 1 else f"Ch {start_n}"
+        channel_count = r["channel_count"]
+        zone = r.get("name") or f"Receiver {r_index}"
 
-        freqs_khz = [str(int(round(a.frequency_mhz * 1000))) for a in chunk]
-        names = [getattr(a, "suggested_name", None) or f"Ch{start_n + i}" for i, a in enumerate(chunk)]
+        channels_xml_parts = []
+        for i in range(channel_count):
+            if i < len(r["channels"]):
+                ch = r["channels"][i]
+                freq_khz = str(int(round(ch["frequency_mhz"] * 1000)))
+                name = ch.get("name") or f"Ch{i + 1}"
+                active = True
+            else:
+                freq_khz = FILLER_FREQ_KHZ
+                name = FILLER_NAME
+                active = False
 
-        devices_xml.append(_build_device(device_id, zone, freqs_khz, names))
+            channels_xml_parts.append(_build_channel(i + 1, freq_khz, name))
 
-        for i in range(CHANNELS_PER_DEVICE):
-            active = i < len(chunk)
             channel_ids_xml.append(
                 f'<id active_channel="{"true" if active else "false"}" '
                 f'coordination_include="{"true" if active else "false"}">{device_id}-{i}</id>'
             )
             if active:
-                freq_entries_xml.append(_build_freq_entry(device_id, i, freqs_khz[i], zone))
-                all_freqs_khz.append(freqs_khz[i])
+                freq_entries_xml.append(_build_freq_entry(device_id, i, freq_khz, zone))
+                all_freqs_khz.append(freq_khz)
 
+        devices_xml.append(
+            _build_device(
+                device_id,
+                device_name=zone,
+                zone=zone,
+                ip_address=(r.get("ip_address") or "").strip(),
+                channels_xml="".join(channels_xml_parts),
+            )
+        )
         profiles_xml.append(_build_profile(zone))
 
     out = _SKELETON

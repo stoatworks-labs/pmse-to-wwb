@@ -1,13 +1,20 @@
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 from exporters import suggested_names, to_reference_csv, to_wwb_frequency_list
 from parser import parse_pdf
-from show_generator import UnsupportedBandError, generate_show
+from show_generator import (
+    MAX_CHANNELS_PER_RECEIVER,
+    ReceiverConfigError,
+    UnsupportedBandError,
+    generate_show,
+)
 
 app = FastAPI(title="PMSE to Wireless Workbench")
 
@@ -49,19 +56,7 @@ async def convert(file: UploadFile = File(...)):
             "It may not be an Ofcom PMSE licence schedule.",
         )
 
-    for assignment, name in zip(result.assignments, suggested_names(result.assignments)):
-        assignment.suggested_name = name
-
-    show_file = None
-    try:
-        show_file = generate_show(
-            result.assignments,
-            show_name=f"Licence {result.licence_no}" if result.licence_no else "PMSE Import",
-            customer=result.licensee,
-            venue_name=result.assignments[0].site if result.assignments else "",
-        )
-    except UnsupportedBandError as exc:
-        result.warnings.append(str(exc))
+    names = suggested_names(result.assignments)
 
     return {
         "metadata": {
@@ -84,13 +79,65 @@ async def convert(file: UploadFile = File(...)):
                 "model": a.model,
                 "fee_category": a.fee_category,
                 "site": a.site,
+                "suggested_name": name,
             }
-            for a in result.assignments
+            for a, name in zip(result.assignments, names)
         ],
         "wwb_frequency_list": to_wwb_frequency_list(result.assignments),
         "reference_csv": to_reference_csv(result.assignments),
-        "wwb_show_file": show_file,
+        "max_channels_per_receiver": MAX_CHANNELS_PER_RECEIVER,
     }
+
+
+class ChannelIn(BaseModel):
+    frequency_mhz: float
+    name: str = ""
+    band: str = "G56"
+
+
+class ReceiverIn(BaseModel):
+    name: str = ""
+    channel_count: int = Field(ge=1, le=MAX_CHANNELS_PER_RECEIVER)
+    ip_address: Optional[str] = None
+    channels: list[ChannelIn]
+
+
+class GenerateShowRequest(BaseModel):
+    show_name: str = "PMSE Licence Import"
+    customer: str = ""
+    poc_name: str = ""
+    venue_name: str = ""
+    venue_address: str = ""
+    receivers: list[ReceiverIn]
+
+
+@app.post("/api/generate-show")
+def generate_show_endpoint(payload: GenerateShowRequest):
+    receivers = [
+        {
+            "name": r.name,
+            "channel_count": r.channel_count,
+            "ip_address": r.ip_address,
+            "channels": [
+                {"frequency_mhz": c.frequency_mhz, "name": c.name, "band": c.band}
+                for c in r.channels
+            ],
+        }
+        for r in payload.receivers
+    ]
+    try:
+        show_file = generate_show(
+            receivers,
+            show_name=payload.show_name,
+            customer=payload.customer,
+            poc_name=payload.poc_name,
+            venue_name=payload.venue_name,
+            venue_address=payload.venue_address,
+        )
+    except (UnsupportedBandError, ReceiverConfigError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    return {"wwb_show_file": show_file}
 
 
 @app.get("/health")
