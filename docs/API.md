@@ -3,7 +3,7 @@
 A FastAPI backend with two real endpoints, a health check, and a static frontend.
 
 > **This tool has a successor.** The functionality was merged into
-> **[RFutils](https://github.com/allansargeant/RFutils)** as **Convert › Ofcom PMSE licence**,
+> **[RFutils](https://github.com/stoatworks-labs/RFutils)** as **Convert › Ofcom PMSE licence**,
 > where **the PDF parser has been validated against a real Ofcom licence.** Before adding a
 > feature here, check whether it belongs there instead.
 

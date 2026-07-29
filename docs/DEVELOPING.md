@@ -6,7 +6,7 @@ FastAPI backend, static frontend, Docker packaging.
 
 ## 1. Read this first: this tool has a successor
 
-The functionality was merged into **[RFutils](https://github.com/allansargeant/RFutils)** as
+The functionality was merged into **[RFutils](https://github.com/stoatworks-labs/RFutils)** as
 **Convert › Ofcom PMSE licence**, where **the PDF parser has been validated against a real Ofcom
 licence.**
 

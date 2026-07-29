@@ -13,7 +13,7 @@ software by hand is slow and error-prone — that's what this replaces.
 
 ### There is a successor, and it's better validated
 
-**[RFutils](https://github.com/allansargeant/RFutils)** has this as **Convert › Ofcom PMSE
+**[RFutils](https://github.com/stoatworks-labs/RFutils)** has this as **Convert › Ofcom PMSE
 licence**, and **its PDF parser has been validated against a real Ofcom licence.** If you're
 choosing a tool rather than maintaining this one, use that.
 

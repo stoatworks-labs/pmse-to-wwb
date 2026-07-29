@@ -93,13 +93,13 @@ Blueprint feature: **New → Blueprint**, pick this repo, and **Apply**. It buil
 ### Docker / docker-compose (self-hosting)
 
 A pre-built image is published to GitHub Container Registry on every push to `master`:
-`ghcr.io/allansargeant/pmse-to-wwb:latest`. It is multi-arch (`linux/amd64` + `linux/arm64`),
+`ghcr.io/stoatworks-labs/pmse-to-wwb:latest`. It is multi-arch (`linux/amd64` + `linux/arm64`),
 so it runs on ARM hosts (Raspberry Pi, Apple-Silicon Docker, ARM servers) as well as x86.
 
 To run it with `docker compose`:
 
 ```bash
-git clone https://github.com/allansargeant/pmse-to-wwb.git
+git clone https://github.com/stoatworks-labs/pmse-to-wwb.git
 cd pmse-to-wwb
 docker compose up -d --build
 ```
@@ -113,7 +113,7 @@ To run the pre-built GHCR image directly instead of building locally:
 ```bash
 docker run -d --name pmse-to-wwb --restart unless-stopped \
   -p 8420:8000 \
-  ghcr.io/allansargeant/pmse-to-wwb:latest
+  ghcr.io/stoatworks-labs/pmse-to-wwb:latest
 ```
 
 ### Unraid
@@ -126,7 +126,7 @@ Unraid Docker UI like any other addon:
    in) and download the template:
    ```bash
    wget -O /boot/config/plugins/dockerMan/templates-user/pmse-to-wwb.xml \
-     https://raw.githubusercontent.com/allansargeant/pmse-to-wwb/master/unraid/pmse-to-wwb.xml
+     https://raw.githubusercontent.com/stoatworks-labs/pmse-to-wwb/master/unraid/pmse-to-wwb.xml
    ```
 2. In the Unraid web UI, go to **Docker → Add Container**.
 3. In the **Template** dropdown at the top, select **pmse-to-wwb** — the fields (image, port)
@@ -135,6 +135,6 @@ Unraid Docker UI like any other addon:
 5. Once running, it appears in your Docker tab with a WebUI button, or visit
    `http://<unraid-ip>:8420`.
 
-The template pulls `ghcr.io/allansargeant/pmse-to-wwb:latest`, so make sure that package is set
+The template pulls `ghcr.io/stoatworks-labs/pmse-to-wwb:latest`, so make sure that package is set
 to **public** visibility on GitHub (Packages → pmse-to-wwb → Package settings) — otherwise Unraid
 can't pull it without registry credentials.
