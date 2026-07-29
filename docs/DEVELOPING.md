@@ -103,6 +103,16 @@ Two things a caller depends on:
 - **`warnings` carries what couldn't be made sense of.** Keep populating it rather than silently
   skipping — a partial parse that reports nothing is indistinguishable from a complete one.
 
+### Test against real PDF input
+
+```bash
+pytest backend/tests/
+```
+
+**`tests/pdf_fixture.py` exists so parser tests run against realistic PDF input rather than
+mocked text. Use it.** A parser test that bypasses PDF extraction doesn't exercise the part most
+likely to break when Ofcom changes its layout — which is the only change this tool can't survive.
+
 RFutils' port of this parser **has been validated against a real Ofcom licence**; this one was
 built from the same material but carries no such claim. Don't restate it as validated.
 
