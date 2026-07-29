@@ -63,3 +63,10 @@ likely to break when Ofcom changes its layout.
 ## 6. Conventions
 
 - Public repo. "Commit" means commit **and** push.
+
+## Diagnostics
+
+Log via `diag.log`, not `print`. `diag.init(...)` goes before anything that can fail. Tk
+apps must also call `diag.install_tk_excepthook(root)` before any callback can run —
+Tkinter swallows callback exceptions, so without it a fault in a button handler never
+reaches the crash handler. See [docs/diagnostics.md](docs/diagnostics.md).

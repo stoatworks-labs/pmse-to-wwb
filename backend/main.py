@@ -10,13 +10,30 @@ from pydantic import BaseModel, Field
 from exporters import suggested_names, to_reference_csv, to_wwb_frequency_list
 from parser import parse_pdf
 from show_generator import (
+
+import diag
     MAX_CHANNELS_PER_RECEIVER,
     ReceiverConfigError,
     UnsupportedBandError,
     generate_show,
 )
 
+# Before the app is constructed, so a failure while wiring routes or loading
+# a model is logged and captured like any other.
+diag.init(app="pmse-to-wwb", env_prefix="PMSE_TO_WWB", version="0.1.0")
+
 app = FastAPI(title="PMSE to Wireless Workbench")
+
+
+@app.get("/api/diagnostics")
+def diagnostics() -> dict:
+    """Write a bundle server-side and report where it went.
+
+    A hosted service has no operator at a console, so the bundle stays on the
+    box and this returns its path rather than streaming it to whoever asked -
+    it contains logs, and those are not public.
+    """
+    return {"bundle": str(diag.collect_diagnostics())}
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
