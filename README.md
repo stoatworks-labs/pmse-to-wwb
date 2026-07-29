@@ -46,6 +46,14 @@ Upload an Ofcom PMSE licence schedule PDF and the app generates:
   and check it carefully before relying on it for a real show** — receiver IP addresses especially
   are a best-effort guess (see [Status / TODO](#status--todo)).
 
+## Documentation
+
+| Doc | Contents |
+|---|---|
+| [docs/USER-GUIDE.md](docs/USER-GUIDE.md) | Converting a licence, which export to use, and what to check before a show |
+| [docs/API.md](docs/API.md) | The two endpoints, upload limits, error codes, and the show-file constraints |
+| [docs/DEVELOPING.md](docs/DEVELOPING.md) | The risk boundary around `.shw` generation, and what in it is a guess |
+
 ## Status / TODO
 
 The `.txt` and `.csv` outputs use Shure's documented import format and are stable. The show-file
