@@ -92,7 +92,7 @@ Blueprint feature: **New → Blueprint**, pick this repo, and **Apply**. It buil
 
 ### Docker / docker-compose (self-hosting)
 
-A pre-built image is published to GitHub Container Registry on every push to `master`:
+A pre-built image is published to GitHub Container Registry on every push to `main`:
 `ghcr.io/stoatworks-labs/pmse-to-wwb:latest`. It is multi-arch (`linux/amd64` + `linux/arm64`),
 so it runs on ARM hosts (Raspberry Pi, Apple-Silicon Docker, ARM servers) as well as x86.
 
@@ -126,7 +126,7 @@ Unraid Docker UI like any other addon:
    in) and download the template:
    ```bash
    wget -O /boot/config/plugins/dockerMan/templates-user/pmse-to-wwb.xml \
-     https://raw.githubusercontent.com/stoatworks-labs/pmse-to-wwb/master/unraid/pmse-to-wwb.xml
+     https://raw.githubusercontent.com/stoatworks-labs/pmse-to-wwb/main/unraid/pmse-to-wwb.xml
    ```
 2. In the Unraid web UI, go to **Docker → Add Container**.
 3. In the **Template** dropdown at the top, select **pmse-to-wwb** — the fields (image, port)
