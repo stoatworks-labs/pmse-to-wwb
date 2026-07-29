@@ -88,6 +88,25 @@ def _parse_licensee_box(page) -> tuple:
 
 
 def parse_pdf(path: str) -> ParsedLicence:
+    """Extract licence metadata and frequency assignments from an Ofcom PMSE PDF.
+
+    Regexes over pdfplumber text, tuned to the layout of real Ofcom schedules —
+    so this is the part most likely to break if Ofcom changes that layout, and
+    the reason parser tests should run through ``tests/pdf_fixture.py`` rather
+    than mocked text.
+
+    Two fields on the result exist to make a partial parse visible, and callers
+    must surface both:
+
+    * ``total_assignments`` is the count THE LICENCE ITSELF STATES, separate
+      from how many ``Assignment`` objects were actually built. A mismatch means
+      rows were missed.
+    * ``warnings`` collects whatever could not be made sense of.
+
+    A parse that yields no assignments is not an exception here — it usually
+    means the PDF is not a PMSE licence schedule, and the caller decides how to
+    report that. A scanned or image-only PDF yields nothing for the same reason.
+    """
     result = ParsedLicence()
     with pdfplumber.open(path) as pdf:
         if pdf.pages:
