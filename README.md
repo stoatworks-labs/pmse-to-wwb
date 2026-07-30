@@ -9,6 +9,12 @@
 A small web app that converts an Ofcom PMSE radio microphone licence schedule (PDF) into files
 for importing frequencies into Shure Wireless Workbench.
 
+[![Watch it running — 45 seconds](docs/video-thumb.png)](https://www.youtube.com/watch?v=Pv_4lca79r0)
+
+*A 45-second tour of the real app. The licence it parses is the project's own
+synthetic fixture (`backend/tests/pdf_fixture.py`), so no real licensee's name,
+address or allocation appears on screen.*
+
 ![PMSE Licence to Wireless Workbench upload page](docs/screenshot.png)
 
 ```mermaid

@@ -7,11 +7,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+import diag
 from exporters import suggested_names, to_reference_csv, to_wwb_frequency_list
 from parser import parse_pdf
 from show_generator import (
-
-import diag
     MAX_CHANNELS_PER_RECEIVER,
     ReceiverConfigError,
     UnsupportedBandError,
