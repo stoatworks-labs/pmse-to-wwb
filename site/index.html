@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e2942">
+<title>PMSE Licence → Wireless Workbench</title>
+<meta name="description" content="Convert an Ofcom PMSE radio-microphone licence schedule PDF into Shure Wireless Workbench import files. Now part of RFutils.">
+<style>
+  :root {
+    --navy: #0e2942; --navy-deep: #0a1f33;
+    --paper: #fafaf8; --ink: #0e2942; --line: #dde3ea;
+    --accent: #235f92; --accent-wash: #eaf1f8;
+    --band: #0e2942; --band-ink: #fafaf8; --band-line: #23415e; --band-accent: #7fa8ce;
+    --warn: #8a6a1f;
+    --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", monospace;
+    --wrap: 46rem; --radius: 3px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0a1f33; --ink: #e6ecf3; --line: #23415e;
+      --accent: #7fa8ce; --accent-wash: #102c47;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.65 var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .band { background: var(--band); color: var(--band-ink); border-bottom: 1px solid var(--band-line); }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 clamp(1.25rem, 4vw, 2rem); }
+  .band .wrap { padding-block: clamp(2.5rem, 7vw, 4rem); }
+  h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 4.5vw, 2.3rem); line-height: 1.2; letter-spacing: -.01em; }
+  .tagline { margin: 0; color: var(--band-accent); font-size: 1.05rem; }
+  main .wrap { padding-block: clamp(2rem, 6vw, 3rem); }
+  h2 { margin: 2.5rem 0 .75rem; font-size: 1.15rem; letter-spacing: .01em; }
+  h2:first-child { margin-top: 0; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--accent); }
+  ul { margin: 0 0 1rem; padding-left: 1.2rem; }
+  li { margin-bottom: .4rem; }
+  code, pre { font-family: var(--font-mono); font-size: .9em; }
+  pre {
+    background: var(--accent-wash); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: .85rem 1rem; overflow-x: auto; margin: 0 0 1rem;
+  }
+  .cta {
+    display: block; margin: 0 0 1.75rem; padding: 1.25rem 1.4rem;
+    background: var(--accent-wash); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent); border-radius: var(--radius);
+    text-decoration: none; color: inherit;
+  }
+  .cta:hover { border-left-width: 6px; }
+  .cta strong { display: block; font-size: 1.1rem; color: var(--accent); margin-bottom: .25rem; }
+  .cta span { display: block; color: inherit; opacity: .85; font-size: .95rem; }
+  .note {
+    margin: 0 0 1.5rem; padding: .9rem 1.1rem; font-size: .95rem;
+    border: 1px solid var(--line); border-left: 3px solid var(--warn);
+    border-radius: var(--radius);
+  }
+  footer { border-top: 1px solid var(--line); margin-top: 3rem; }
+  footer .wrap { padding-block: 1.5rem; font-size: .85rem; opacity: .75; }
+</style>
+</head>
+<body>
+
+<div class="band">
+  <div class="wrap">
+    <h1>PMSE Licence → Wireless Workbench</h1>
+    <p class="tagline">Turn an Ofcom PMSE licence schedule PDF into files Shure Wireless Workbench can import.</p>
+  </div>
+</div>
+
+<main>
+  <div class="wrap">
+
+    <a class="cta" href="https://rfutils.stoatworks-labs.com">
+      <strong>Use it now, in your browser →</strong>
+      <span>
+        This converter is part of <b>RFutils</b>, under <b>Convert › Ofcom PMSE licence</b>.
+        It runs entirely on your own machine — your licence PDF is never uploaded anywhere.
+      </span>
+    </a>
+
+    <p class="note">
+      <b>This repository is the original standalone app, and it still works.</b> The
+      converter was merged into RFutils, where the PDF parser has been validated
+      against a real Ofcom licence, so RFutils is where the work continues. Use the
+      hosted link above unless you specifically want to self-host this one.
+    </p>
+
+    <h2>What it produces</h2>
+    <p>Upload a licence schedule PDF and you get:</p>
+    <ul>
+      <li>
+        <b>WWB frequency list (<code>.txt</code>)</b> — the licensed frequencies in
+        Shure's documented import format, one per line. The safe, standards-based
+        option: import it via <i>Import frequencies from file</i>.
+      </li>
+      <li>
+        <b>Reference sheet (<code>.csv</code>)</b> — each frequency mapped to a
+        suggested channel name and its Ofcom coordination/fee group, since the licence
+        itself carries no per-microphone names.
+      </li>
+      <li>
+        <b>WWB7 show file (<code>.shw</code>)</b> — channels already named and
+        frequencies already assigned, ready to open.
+      </li>
+    </ul>
+
+    <p class="note">
+      The <code>.shw</code> format is <b>experimental and reverse-engineered</b>. Shure
+      does not publish it; the generator works by cloning verified XML fragments from a
+      real Wireless Workbench 7 show file and substituting frequencies and names.
+      <b>Open the result in Wireless Workbench and check it before relying on it for a
+      live show.</b>
+    </p>
+
+    <h2>Running this version yourself</h2>
+    <p>A Python service (FastAPI) with a single-page front end. With Docker:</p>
+<pre>git clone https://github.com/stoatworks-labs/pmse-to-wwb
+cd pmse-to-wwb
+docker compose up</pre>
+    <p>
+      Then open <code>http://localhost:8000</code>. Full instructions, the API reference
+      and the user guide are in the
+      <a href="https://github.com/stoatworks-labs/pmse-to-wwb">repository</a>.
+    </p>
+
+    <h2>Where the code lives</h2>
+    <ul>
+      <li><a href="https://github.com/stoatworks-labs/pmse-to-wwb">pmse-to-wwb</a> — this standalone app</li>
+      <li><a href="https://github.com/stoatworks-labs/RFutils">RFutils</a> — the unified suite it became part of</li>
+    </ul>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    An <a href="https://stoatworks-labs.com">Stoatworks Labs</a> project ·
+    AI-assisted, human-directed and reviewed · MIT licensed ·
+    verify every export against your own Wireless Workbench install before a live show.
+  </div>
+</footer>
+
+</body>
+</html>

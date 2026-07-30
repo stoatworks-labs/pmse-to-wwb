@@ -9,6 +9,13 @@
 A small web app that converts an Ofcom PMSE radio microphone licence schedule (PDF) into files
 for importing frequencies into Shure Wireless Workbench.
 
+> **Use it in your browser: <https://rfutils.stoatworks-labs.com>** — this converter now lives in
+> [RFutils](https://github.com/stoatworks-labs/RFutils) under *Convert › Ofcom PMSE licence*, where
+> the PDF parser has been validated against a real Ofcom licence. It runs entirely on your own
+> machine: the licence PDF is never uploaded anywhere. This repository remains a working standalone
+> app, but RFutils is where the work continues. <https://pmse-to-wwb.stoatworks-labs.com> is a
+> landing page pointing there.
+
 [![Watch it running — 45 seconds](docs/video-thumb.png)](https://www.youtube.com/watch?v=Pv_4lca79r0)
 
 *A 45-second tour of the real app. The licence it parses is the project's own
