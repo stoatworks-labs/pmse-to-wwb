@@ -1,4 +1,4 @@
-# pmse-to-wwb — User Guide
+# pmse-to-wwb user guide
 
 Turning an **Ofcom PMSE radio-microphone licence schedule (PDF)** into files you can import into
 **Shure Wireless Workbench**.
@@ -9,15 +9,14 @@ software by hand is slow and error-prone — that's what this replaces.
 
 ---
 
-## 0. Before you rely on the output
-
+## Before you rely on the output
 ### There is a successor, and it's better validated
 
 **[RFutils](https://github.com/stoatworks-labs/RFutils)** has this as **Convert › Ofcom PMSE
 licence**, and **its PDF parser has been validated against a real Ofcom licence.** If you're
 choosing a tool rather than maintaining this one, use that.
 
-### ⚠ The `.shw` show file is reverse-engineered
+### The `.shw` show file is reverse-engineered
 
 **WWB's native show-file format is undocumented.** This tool builds one by cloning real XML
 fragments out of a working WWB7 7.8.1 file and substituting frequencies and names — everything
@@ -36,8 +35,7 @@ format. If in doubt, use it.
 
 ---
 
-## 1. Converting a licence
-
+## Converting a licence
 Upload the Ofcom PDF. You get back:
 
 - **the licence metadata** — licence number, licensee, dates, PMSE reference;
@@ -46,12 +44,12 @@ Upload the Ofcom PDF. You get back:
 - **a WWB frequency list** — the safe export;
 - **a reference CSV** — for your own records, not for import.
 
-### ⚠ Check the assignment count against the licence
+### Check the assignment count against the licence
 
 The response carries two numbers: **the total the licence itself states**, and **how many were
 actually parsed**. If they differ, the parser missed rows.
 
-### ⚠ Read the warnings
+### Read the warnings
 
 Warnings are where the parser reports what it couldn't make sense of. **A licence with warnings
 is a partial result presented alongside a complete-looking table.** Read them before exporting.
@@ -65,8 +63,7 @@ result.
 
 ---
 
-## 2. Getting frequencies into Wireless Workbench
-
+## Getting frequencies into Wireless Workbench
 ### The safe route: the frequency list
 
 Bare MHz values, one per line, de-duplicated — **Shure's own documented import format** for
@@ -93,8 +90,7 @@ Constraints, all of which come from the single real sample the format was learne
 
 ---
 
-## 3. Running it
-
+## Running it
 See the [README](../README.md) for local, Docker/compose, Render and Unraid deployment.
 
 **There is no authentication.** If you host it somewhere reachable, anyone who finds it can
@@ -103,20 +99,19 @@ deployment accordingly.
 
 ---
 
-## 4. Troubleshooting
-
+## Troubleshooting
 | Symptom | Cause |
 |---|---|
 | **"Please upload a PDF file"** | Wrong content type — the file isn't being sent as a PDF. |
 | **"PDF exceeds the 20MB upload limit"** | Almost certainly the wrong file; Ofcom schedules are under 1 MB. |
 | **"Could not parse this PDF"** | The parser threw. It may be a scanned/image PDF, or a layout it doesn't know. |
 | **"No frequency assignments were found"** | It parsed but found nothing — probably not a PMSE licence schedule. |
-| **Fewer frequencies than the licence says** | The parser missed rows. Compare the two counts and read the warnings (§1). |
-| **WWB won't open the `.shw`** | The format is reverse-engineered (§0). Fall back to the frequency list. |
-| **WWB opens it but frequencies look wrong** | **The dangerous case.** Check every channel against the licence before the show (§0). |
-| **A band other than G56 was refused** | Only G56 is supported — the format was learned from one G56 sample (§2). |
-| **Receiver IPs are wrong in WWB** | Expected — the IP encoding is unverified (§2). |
-| **Channels I didn't fill show as "Unused"** | Intentional filler, marked inactive (§2). |
+| **Fewer frequencies than the licence says** | The parser missed rows. Compare the two counts and read the warnings ([Converting a licence](#converting-a-licence)). |
+| **WWB won't open the `.shw`** | The format is reverse-engineered ([Before you rely on the output](#before-you-rely-on-the-output)). Fall back to the frequency list. |
+| **WWB opens it but frequencies look wrong** | **The dangerous case.** Check every channel against the licence before the show ([Before you rely on the output](#before-you-rely-on-the-output)). |
+| **A band other than G56 was refused** | Only G56 is supported — the format was learned from one G56 sample ([Getting frequencies into Wireless Workbench](#getting-frequencies-into-wireless-workbench)). |
+| **Receiver IPs are wrong in WWB** | Expected — the IP encoding is unverified ([Getting frequencies into Wireless Workbench](#getting-frequencies-into-wireless-workbench)). |
+| **Channels I didn't fill show as "Unused"** | Intentional filler, marked inactive ([Getting frequencies into Wireless Workbench](#getting-frequencies-into-wireless-workbench)). |
 
 ---
 
