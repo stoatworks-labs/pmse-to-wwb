@@ -12,7 +12,7 @@
 window.STOATWORKS_ABOUT = Object.assign({
   "name": "PMSE \u2192 WWB",
   "slug": "pmse-to-wwb",
-  "version": "",
+  "version": "v0.1.0",
   "hook": "Ofcom licence to Workbench",
   "licence": "MIT",
   "guide": "https://stoatworks-labs.com/software/pmse-to-wwb/guide/",
