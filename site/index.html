@@ -181,6 +181,14 @@ docker compose up</pre>
 <script src="/about.js" defer></script>
 
 <!--
+  Hands the footer below the version out of about-data.js — this page has no
+  build step to stamp one in. Must stay between the two: it reads what
+  about-data.js sets and writes what support-footer.js reads, and deferred
+  scripts run in document order.
+-->
+<script src="/support-footer-version.js" defer></script>
+
+<!--
   Support footer. Vendored from stoatworks-backend/support-footer — edit it there
   and re-run scripts/sync-support-footer.sh, never here. It appends itself after
   the band above, so the two read as project note then support ask.
