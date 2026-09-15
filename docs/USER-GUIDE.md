@@ -3,6 +3,10 @@
 Turning an **Ofcom PMSE radio-microphone licence schedule (PDF)** into files you can import into
 **Shure Wireless Workbench**.
 
+![The upload page, where a licence PDF goes in.](screenshot.png)
+
+*The upload page, where a licence PDF goes in.*
+
 In the UK, a PMSE licence allocates specific frequencies for wireless mic use at a venue or
 event, and Ofcom issues the schedule as a PDF. Retyping those frequencies into coordination
 software by hand is slow and error-prone — that's what this replaces.
