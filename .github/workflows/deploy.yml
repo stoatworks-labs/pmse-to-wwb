@@ -98,7 +98,7 @@ jobs:
                  | grep -vF '__CF$cv$params' | shasum -a 256 | cut -d' ' -f1)
           echo "expecting the live <head> to hash to $want"
           for attempt in 1 2 3 4 5; do
-            got=$(curl -sS --max-time 30 "https://pmse.stoatworks-labs.com/" \
+            got=$(curl -sS --max-time 30 "https://pmse-to-wwb.stoatworks-labs.com/" \
                   | sed -n '1,/<\/head>/p' | grep -vF '__CF$cv$params' \
                   | shasum -a 256 | cut -d' ' -f1 || true)
             if [ "$got" = "$want" ]; then
@@ -108,7 +108,7 @@ jobs:
             echo "not there yet, got $got — retrying in 10s (attempt $attempt)"
             sleep 10
           done
-          echo "::error::Deployed, but https://pmse.stoatworks-labs.com/ is still not serving this"
+          echo "::error::Deployed, but https://pmse-to-wwb.stoatworks-labs.com/ is still not serving this"
           echo "::error::build's <head>. The upload succeeded, so this is the edge"
           echo "::error::serving something else — check the Worker's routes, and that"
           echo "::error::pmse-to-wwb is what the custom domain actually points at."
