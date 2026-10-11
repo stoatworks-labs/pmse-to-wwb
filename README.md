@@ -1,5 +1,11 @@
 # PMSE Licence → Wireless Workbench
 
+> [!IMPORTANT]
+> **Archived on 11 October 2026.** This converter lives on in
+> [RFutils](https://github.com/stoatworks-labs/RFutils) (*Convert › Ofcom PMSE licence*), in the browser at
+> <https://rfutils.stoatworks-labs.com>. The last release, v0.2.2, and its image
+> `ghcr.io/stoatworks-labs/pmse-to-wwb:v0.2.2` still work, but nothing here will be updated.
+
 > **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
 > (Anthropic), directed and reviewed by a human author. The code has not been independently
 > audited, and the WWB `.shw` show-file format in particular is an undocumented,
