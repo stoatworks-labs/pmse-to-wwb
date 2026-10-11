@@ -19,7 +19,7 @@ from show_generator import (
 
 # Before the app is constructed, so a failure while wiring routes or loading
 # a model is logged and captured like any other.
-diag.init(app="pmse-to-wwb", env_prefix="PMSE_TO_WWB", version="0.1.0")
+diag.init(app="pmse-to-wwb", env_prefix="PMSE_TO_WWB", version="0.2.2")
 
 app = FastAPI(title="PMSE to Wireless Workbench")
 
